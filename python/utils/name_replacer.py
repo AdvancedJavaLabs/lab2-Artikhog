@@ -1,6 +1,4 @@
 import spacy
-from spacy.lang.ru import Russian
-from spacy.lang.en import English
 
 
 class NameReplacer:
@@ -31,7 +29,6 @@ class NameReplacer:
         result = []
 
         for token in doc:
-            print(token)
             if (token.text.lower() == self.replace_name.lower()):
                 if token.text.istitle():
                     result.append(self.new_name.title())

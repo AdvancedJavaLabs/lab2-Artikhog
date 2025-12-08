@@ -89,7 +89,7 @@ class KafkaSentenceProcessor:
             "total_words_counted": total_words,
             "top_words": [{"word": word, "count": count} for word, count in top_words],
             "sentiment_analysis": sentiment_stats,
-            # "sorted_sentences": sorted_sentences,
+            "sorted_sentences": sorted_sentences,
             "processed_messages": self.sentiment_aggregator.processed_messages
         }
 

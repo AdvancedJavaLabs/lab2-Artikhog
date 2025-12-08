@@ -2,6 +2,7 @@ package org.itmo.kafka;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.itmo.aggregator.SentenceLengthAggregator;
 import org.itmo.aggregator.SentimentSentenceAggregator;
 import org.itmo.aggregator.TopNWordsAggregator;
 import org.itmo.file.ResultFileWriter;
@@ -17,9 +18,10 @@ public class WordCountConsumer {
     private final AtomicLong totalWords = new AtomicLong(0);
     private final String topic;
     private final int partitions;
-    private int receivedMessages = 0;
+    private final Set<Integer> completedPartitions = new HashSet<>();
     private final TopNWordsAggregator topNWordsAggregator;
     private final SentimentSentenceAggregator sentimentSentenceAggregator;
+    private final SentenceLengthAggregator sentenceLengthAggregator;
     private final String outputFilePath;
     private final ResultFileWriter writer;
 
@@ -28,6 +30,7 @@ public class WordCountConsumer {
         this.partitions = partitions;
         this.topNWordsAggregator = new TopNWordsAggregator();
         this.sentimentSentenceAggregator = new SentimentSentenceAggregator();
+        this.sentenceLengthAggregator = new SentenceLengthAggregator();
         this.outputFilePath = outputFilePath;
         this.writer = new ResultFileWriter(outputFilePath);
 
@@ -49,7 +52,7 @@ public class WordCountConsumer {
             System.out.println("Subscribed to topic: " + topic);
             System.out.println("Starting to consume messages...");
 
-            while (receivedMessages < partitions) {
+            while (completedPartitions.size() < partitions) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
                 for (ConsumerRecord<String, String> record : records) {
@@ -73,7 +76,7 @@ public class WordCountConsumer {
             System.out.printf("Received message - Partition: %d, Offset: %d, Key: %s%n\n",
                     record.partition(), record.offset(), key);
             processStatisticsMessage(value);
-            receivedMessages += 1;
+            completedPartitions.add(record.partition());
         } catch (Exception e) {
             System.err.println("Error processing message: " + e.getMessage());
         }
@@ -84,7 +87,6 @@ public class WordCountConsumer {
             JSONObject stats = new JSONObject(jsonValue);
             if (stats.has("total_words_counted")) {
                 long wordsFromStats = stats.getLong("total_words_counted");
-
                 totalWords.addAndGet(wordsFromStats);
             }
 
@@ -93,16 +95,18 @@ public class WordCountConsumer {
                 System.out.println("Top words array length: " + topWordsArray.length());
                 System.out.println("Top words: " + topWordsArray.toString());
                 this.topNWordsAggregator.updateTopWords(topWordsArray);
-            } else {
-                System.out.println("No top_words in message");
             }
 
             if (stats.has("sentiment_analysis")) {
                 JSONObject sentimentJson = stats.getJSONObject("sentiment_analysis");
                 System.out.println("Sentiment analysis: " + sentimentJson.toString());
                 this.sentimentSentenceAggregator.updateSentimentStats(sentimentJson);
-            } else {
-                System.out.println("No sentiment_analysis in message");
+            }
+
+            if (stats.has("sorted_sentences")) {
+                JSONArray topSentenceLengthArray = stats.getJSONArray("sorted_sentences");
+                System.out.println(topSentenceLengthArray.toString());
+                this.sentenceLengthAggregator.parseArray(topSentenceLengthArray);
             }
         } catch (Exception e) {
             System.err.println("Error parsing statistics message: " + e.getMessage());
@@ -130,6 +134,26 @@ public class WordCountConsumer {
         writer.writeToFile("==========================");
     }
 
+    public void printTopSentences() {
+        List<SentenceLengthAggregator.SentenceLength> sortedSentences =
+                this.sentenceLengthAggregator.getSortedSentences();
+
+        writer.writeToFile("=== TOP " + sortedSentences + " SENTENCES BY LENGTH ===");
+
+        for (int i = 0; i < sortedSentences.size(); i++) {
+            SentenceLengthAggregator.SentenceLength entry = sortedSentences.get(i);
+
+            writer.writeToFile(
+                    "%2d. [len=%d] %s",
+                    i + 1,
+                    entry.getLength(),
+                    entry.getSentence()
+            );
+        }
+
+        writer.writeToFile("==========================================");
+    }
+
     private void printFinalStats() {
         long words = totalWords.get();
 
@@ -140,6 +164,7 @@ public class WordCountConsumer {
         writer.writeToFile("=".repeat(50));
         printTopWords(10);
         printSentimentStats();
+        printTopSentences();
 
         // Дополнительно выводим в консоль информацию о завершении
         System.out.println("Consumer finished. Results written to: " + outputFilePath);

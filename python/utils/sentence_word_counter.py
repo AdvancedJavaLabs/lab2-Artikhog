@@ -1,8 +1,4 @@
 import re
-import json
-from typing import Dict, Any
-import argparse
-import datetime
 
 class SentenceWordCounter:
     def __init__(self):

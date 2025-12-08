@@ -1,7 +1,7 @@
 from textblob import TextBlob
 from collections import Counter
 import re
-from typing import List, Dict, Tuple
+from typing import List
 
 class SentimentAggregator:
     def __init__(self):
