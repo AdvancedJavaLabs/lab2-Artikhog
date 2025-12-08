@@ -13,7 +13,7 @@ public class SentenceSplitter {
     public void processFileStreaming(String filePath) throws IOException {
         File file = new File(filePath);
         if (!file.exists() || !file.canRead()) {
-            throw new IOException("Файл недоступен: " + filePath);
+            throw new IOException("File unavailable: " + filePath);
         }
 
         StringBuilder currentSentence = new StringBuilder();
@@ -25,8 +25,7 @@ public class SentenceSplitter {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.trim().isEmpty()) {
-                    // Пустая строка - возможный разделитель предложений
-                    if (currentSentence.length() > 0) {
+                    if (!currentSentence.isEmpty()) {
                         processSentence(currentSentence.toString().trim());
                         currentSentence.setLength(0);
                         sentenceCount++;
@@ -55,7 +54,7 @@ public class SentenceSplitter {
         System.out.println("Sentences readed: " + sentenceCount);
     }
 
-    protected void processSentence(String sentence) {
+    private void processSentence(String sentence) {
         producer.sendSentence(sentence);
     }
 }

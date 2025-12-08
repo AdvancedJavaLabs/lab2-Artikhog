@@ -26,8 +26,9 @@ public class SentenceProducer {
     }
 
     public void sendSentence(String sentence) {
-        String key = "key-"  + this.sendedSentences % this.partitions;
-        ProducerRecord<String, String> record = new ProducerRecord<>(this.topic, key, sentence);
+        String key = "key-"  + this.sendedSentences;
+        int partition = this.sendedSentences % this.partitions;
+        ProducerRecord<String, String> record = new ProducerRecord<>(this.topic, partition, key, sentence);
         producer.send(record, (metadata, exception) -> {
             if (exception == null) {
                 System.out.printf("Send message: partition=%d, offset=%d, key=%s%n",
