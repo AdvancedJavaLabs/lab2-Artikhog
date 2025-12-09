@@ -11,8 +11,9 @@ repositories {
 }
 
 dependencies {
-    implementation("javax.jms:jms-api:2.0.1")
-    implementation("org.apache.activemq:activemq-broker:6.1.1")
+    implementation("org.apache.kafka:kafka-clients:3.6.0")
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation ("org.json:json:20230618")
     testImplementation(kotlin("test"))
 }
 
@@ -21,9 +22,9 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(21)
 }
 
 application {
-    mainClass.set("MainKt")
+    mainClass.set("org.itmo.Main")
 }
