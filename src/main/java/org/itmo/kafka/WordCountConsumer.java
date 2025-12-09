@@ -18,7 +18,7 @@ public class WordCountConsumer {
     private final AtomicLong totalWords = new AtomicLong(0);
     private final String topic;
     private final int partitions;
-    private final Set<Integer> completedPartitions = new HashSet<>();
+    private int received = 0;
     private final TopNWordsAggregator topNWordsAggregator;
     private final SentimentSentenceAggregator sentimentSentenceAggregator;
     private final SentenceLengthAggregator sentenceLengthAggregator;
@@ -52,7 +52,7 @@ public class WordCountConsumer {
             System.out.println("Subscribed to topic: " + topic);
             System.out.println("Starting to consume messages...");
 
-            while (completedPartitions.size() < partitions) {
+            while (received < partitions) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
 
                 for (ConsumerRecord<String, String> record : records) {
@@ -76,7 +76,7 @@ public class WordCountConsumer {
             System.out.printf("Received message - Partition: %d, Offset: %d, Key: %s%n\n",
                     record.partition(), record.offset(), key);
             processStatisticsMessage(value);
-            completedPartitions.add(record.partition());
+            received += 1;
         } catch (Exception e) {
             System.err.println("Error processing message: " + e.getMessage());
         }

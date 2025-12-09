@@ -4,35 +4,53 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class SentenceLengthAggregator {
-    private final List<SentenceLength> sortedSentences = new ArrayList<>();
+    private List<SentenceLength> sortedSentences = new ArrayList<>();
 
     public void parseArray(JSONArray array) {
+        List<SentenceLength> newSentences = new ArrayList<>(array.length());
+
         for (int i = 0; i < array.length(); i++) {
             JSONObject obj = array.getJSONObject(i);
-
             String sentence = obj.getString("sentence");
             int length = obj.getInt("length");
-
-            sortedSentences.add(new SentenceLength(sentence, length));
+            newSentences.add(new SentenceLength(sentence, length));
         }
 
-        Collections.sort(sortedSentences);
+        mergeSortedLists(newSentences);
     }
 
-    public List<SentenceLength> getAll() {
-        return Collections.unmodifiableList(sortedSentences);
+    private void mergeSortedLists(List<SentenceLength> newList) {
+        List<SentenceLength> merged = new ArrayList<>(
+                sortedSentences.size() + newList.size()
+        );
+
+        int i = 0;
+        int j = 0;
+
+        while (i < sortedSentences.size() && j < newList.size()) {
+            if (sortedSentences.get(i).compareTo(newList.get(j)) <= 0) {
+                merged.add(sortedSentences.get(i++));
+            } else {
+                merged.add(newList.get(j++));
+            }
+        }
+
+        while (i < sortedSentences.size()) {
+            merged.add(sortedSentences.get(i++));
+        }
+
+        while (j < newList.size()) {
+            merged.add(newList.get(j++));
+        }
+
+        sortedSentences = merged;
     }
 
     public List<SentenceLength> getSortedSentences() {
         return sortedSentences;
-    }
-
-    public void printAll() {
-        sortedSentences.forEach(System.out::println);
     }
 
     public static class SentenceLength implements Comparable<SentenceLength> {

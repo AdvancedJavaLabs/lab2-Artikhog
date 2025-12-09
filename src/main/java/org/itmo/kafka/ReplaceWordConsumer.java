@@ -41,7 +41,7 @@ public class ReplaceWordConsumer {
         if (!Files.exists(path)) {
             Files.createDirectories(path);
         }
-        writer = Files.newBufferedWriter(Paths.get("./result/result.txt"));
+        writer = Files.newBufferedWriter(Paths.get("./result/replaced_text.txt"));
     }
 
     public void startConsuming() {
@@ -122,10 +122,5 @@ public class ReplaceWordConsumer {
             expectedNextIndex++;
         }
         writer.flush();
-    }
-
-    public void stop() {
-        running = false;
-        consumer.wakeup();
     }
 }
